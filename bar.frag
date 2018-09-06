@@ -2,8 +2,9 @@
     pixelRatio: 1,
     frameskip: 1,
     audio: true,
+    server: 3000,
     IMPORTED: {
-        v1: { PATH: './videos/08.mov', SPEED: 2 },
+        v1: { PATH: './videos/02.mov', SPEED: 1 },
     },
 }*/
 precision highp float;
@@ -183,24 +184,23 @@ void main() {
     vec2 uv0 = uv;
 
     uv = uv * 2. - 1.;
-    uv *= uv;
 
     // uv = f2(uv);
-    // uv = f1(uv);
+    uv = f1(uv);
     // uv = f3(uv);
 
     // DO NOT TOUC
     uv = uv * .5 + .5;
     gl_FragColor = texture2D(v1, uv);
 
-    // gl_FragColor = p1(uv, gl_FragColor);
-    // gl_FragColor = p2(uv0, gl_FragColor);
+    gl_FragColor = p1(uv, gl_FragColor);
+    gl_FragColor = p2(uv0, gl_FragColor);
 
     // gl_FragColor = p3(uv0, gl_FragColor);
     // gl_FragColor = p4(uv0, gl_FragColor);
     // gl_FragColor = p5(uv0, gl_FragColor);
 
-    gl_FragColor = edge(uv, gl_FragColor);
+    // gl_FragColor = edge(uv, gl_FragColor);
 
     // gl_FragColor = texture2D(v1, uv0);
     // gl_FragColor.r = texture2D(v1, uv).r;
