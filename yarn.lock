@@ -20,6 +20,10 @@ glsl-raytrace@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/glsl-raytrace/-/glsl-raytrace-1.0.0.tgz#5fd022180a36d69522e2644d300ff20966b078de"
 
+glsl-sdf-primitives@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/glsl-sdf-primitives/-/glsl-sdf-primitives-0.0.1.tgz#7a2faced950f10f272730c642b75834b35895e70"
+
 glsl-smooth-min@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/glsl-smooth-min/-/glsl-smooth-min-1.0.0.tgz#93f00a06675be789933676e9210cd597ad5b1c57"
