@@ -7,6 +7,7 @@
     "glsl-sdf-ops": "^0.0.3",
     "glsl-sdf-primitives": "^0.0.1",
     "glsl-smooth-min": "^1.0.0",
-    "glsl-square-frame": "^1.0.1"
+    "glsl-square-frame": "^1.0.1",
+    "glslify": "^6.3.1"
   }
 }

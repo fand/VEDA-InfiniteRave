@@ -16,7 +16,9 @@ vec2 doModel(vec3 p);
 #pragma glslify: getNormal = require('glsl-sdf-normal', map = doModel)
 #pragma glslify: sdTorus = require('glsl-sdf-primitives/sdTorus')
 #pragma glslify: sdBox = require('glsl-sdf-primitives/sdBox')
+#pragma glslify: sdCylinder = require('glsl-sdf-primitives/sdCylinder')
 #pragma glslify: opU = require('glsl-sdf-ops/union')
+#pragma glslify: opS = require('glsl-sdf-ops/subtraction')
 #pragma glslify: smin = require('glsl-smooth-min')
 #pragma glslify: noise4 = require('glsl-noise/simplex/4d')
 #pragma glslify: noise3 = require('glsl-noise/simplex/3d')
@@ -31,29 +33,47 @@ vec2 rot(vec2 st, float t){
 vec2 doModel(vec3 p) {
   float blockSize = 3.;
 
+  // p.xy = rot(p.xy, floor(p.z / blockSize) * 3.14);
+  p.xy = rot(p.xy, p.z * .2);
+  // p.xz = rot(p.xz, p.y * .1);
+
   p = mod(p, blockSize) - (blockSize / 2.);
   p /= (blockSize / 2.);
 
-  // p.yz /= 3.;
-
-  // p += noise3(p) * sin(time) * .3;
-  // p.xy = rot(p.xy, time * .2);
-
-
   vec2 m = vec2(99999);
   m = opU(m, vec2(sdBox(p, vec3(1., .1, .1)), 0));
-  m = opU(m, vec2(sdBox(p, vec3(.1, .1, 1.)), 0));
-  m = opU(m, vec2(sdBox(p, vec3(.1, 1., .1)), 0));
+  m = opU(m, vec2(sdBox(p, vec3(.1, 1., .1)), 2));
+  m = opU(m, vec2(sdBox(p, vec3(.1, .1, 1.)), 1));
+
+  vec3 p1 = p;
+  p1.x -= p1.z;
+  p1.x -= p1.y;
+  // m = opU(m, vec2(sdBox(p1, vec3(.1, 1., .1)), 2));
+  // m = opU(m, vec2(sdBox(p1, vec3(.1, .1, 1.)), 1));
+
+
+  // holes
+  p = mod(p, .4) - .2;
+  p *= 1. + sin(time) * .2;
+  p.xy = rot(p.xy, time);
+
+  float h = .15;
+  m.x = opS(sdBox(p, vec3(h, 1., h)), m.x);
+  m.x = opS(sdBox(p, vec3(h, h, 1.)), m.x);
+  m.x = opS(sdBox(p, vec3(1., h, h)), m.x);
 
   return m;
 }
 
 vec3 doMaterial(vec3 pos, vec3 nor, float materialId) {
   if (materialId == 0.0) {
-    return vec3(0, 1, 1);
+    return vec3(0, .3, 1);
   }
+  // else if (materialId == 1.0) {
+  //   return vec3(1, .4, .2)* .5;
+  // }
   else {
-    return vec3(1, .2, .5)* .7;
+    return vec3(1, .2, .3);
   }
 }
 
@@ -84,12 +104,11 @@ void main() {
 
   vec3 rayDirection = camera(rayOrigin, rayTarget, screenPos, 1.0);
 
-  rayDirection.xy = rot(rayDirection.xy, time);
-  rayDirection.xz = rot(rayDirection.xz, time);
-
+  // rayDirection.xy = rot(rayDirection.xy, time * .1);
+  // rayDirection.xz = rot(rayDirection.xz, time * .2);
 
   vec3 col = vec3(0.015);
-  vec2 t = raytrace(rayOrigin, rayDirection, 80., 0.01);
+  vec2 t = raytrace(rayOrigin, rayDirection, 10., 0.003);
 
   if (t.x > -0.5) {
     vec3 pos = rayOrigin + t.x * rayDirection;
@@ -97,17 +116,18 @@ void main() {
     vec3 mal = doMaterial(pos, nor, t.y);
 
     col = doLighting(pos, nor, rayDirection, t.x, mal);
+    col *= t.x;
   }
   else {
-    col = vec3(0);
+    col = vec3(1, .5, 0) * .8;
   }
 
   // Color grading
-  col = pow(clamp(col,0.0,1.0), vec3(0.45));
+  col = pow(clamp(col,0.0,1.0), vec3(0.3));
 
-  col = fract(col * 3. + time + t.x);
-  col = col * 2. - 1.;
-  col = step(.5, col);
+  // col = fract(col * 3. + time + t.x);
+  // col = col * 2. - 1.;
+  // col = step(.5, col);
 
   // col = 1. - col * 2.;
 
