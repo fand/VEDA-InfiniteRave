@@ -1,7 +1,6 @@
 /*{
   glslify: true,
   audio: true,
-  pixelRatio: 1,
   frameskip: 1,
 }*/
 precision mediump float;
