@@ -204,9 +204,9 @@ glsl-noise@^0.0.0:
   version "0.0.0"
   resolved "https://registry.yarnpkg.com/glsl-noise/-/glsl-noise-0.0.0.tgz#367745f3a33382c0eeec4cb54b7e99cfc1d7670b"
 
-glsl-raytrace@^1.0.0:
+glsl-raytrace@fand/glsl-raytrace#add-reduction:
   version "1.0.0"
-  resolved "https://registry.yarnpkg.com/glsl-raytrace/-/glsl-raytrace-1.0.0.tgz#5fd022180a36d69522e2644d300ff20966b078de"
+  resolved "https://codeload.github.com/fand/glsl-raytrace/tar.gz/688e10bd93cc6886da48454d048657dc67914b2c"
 
 glsl-resolve@0.0.1:
   version "0.0.1"
