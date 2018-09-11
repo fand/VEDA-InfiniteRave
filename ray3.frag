@@ -1,13 +1,20 @@
 /*{
   glslify: true,
   audio: true,
+  midi: true,
   pixelRatio: 1,
   frameskip: 1,
+  PASSES: [
+    { fs: "mem.frag", TARGET: "mem", FLOAT: true },
+    {},
+  ],
 }*/
 precision mediump float;
 uniform vec2  resolution;
 uniform float time;
 uniform float volume;
+uniform sampler2D midi;
+uniform sampler2D mem;
 
 vec2 doModel(vec3 p);
 #pragma glslify: raytrace = require('glsl-raytrace', map = doModel, steps = 100)
@@ -30,14 +37,25 @@ vec2 rot(vec2 st, float t){
   return mat2(c, -s, s, c) * st;
 }
 
+float cc(in float c) {
+  return texture2D(midi, vec2(176. / 256., c / 128.)).x * 2.;
+}
+
+float t() {
+  return texture2D(mem, vec2(0)).y;
+}
+
 vec2 doModel(vec3 p) {
   vec2 m = vec2(99999);
   vec3 p1 = p;
-  m = opU(m, vec2(sdBox(p1, vec3(1,1,1)), 0.));
+  m = opU(m, vec2(sdBox(p1, vec3(1,1,1)*(1. + volume * .01)), 0.));
 
   float blockSize = 3.;// + sin(time);
-  p.xy = rot(p.xy, p.z * .2 + time * .2);
-  p.xz = rot(p.xz, p.y * .2 + time);
+
+  vec3 pp = p;
+  pp.xy = rot(pp.xy, pp.z * .2 + t() * .2);
+  pp.xz = rot(pp.xz, pp.y * .2 + t());
+  p = mix(p, pp, cc(16.));
 
   p = mod(p, blockSize) - (blockSize / 2.);
   p /= (blockSize / 2.);
@@ -98,7 +116,7 @@ vec3 doLighting(vec3 pos, vec3 nor, vec3 rd, float dis, vec3 mal) {
 }
 
 void main() {
-  float cameraAngle  = 0.5 * time;
+  float cameraAngle  = 0.5 * t();
   vec3 rayOrigin = vec3(3.5 * sin(cameraAngle), 3.0, 3.5 * cos(cameraAngle));
   vec3 rayTarget = vec3(0, 0, 0);
   vec2 screenPos = square(resolution);
@@ -141,6 +159,8 @@ void main() {
   // col = step(.5, col);
 
   // col = 1. - col * 2.;
+
+  col *= cc(0.);
 
   gl_FragColor = vec4( col, 1.0 );
 }
