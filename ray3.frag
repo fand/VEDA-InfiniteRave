@@ -42,9 +42,7 @@ vec2 doModel(vec3 p) {
   p = mod(p, blockSize) - (blockSize / 2.);
   p /= (blockSize / 2.);
 
-
   // m = opU(m, vec2(sdBox(p, vec3(.1, 10., .1)), 0));
-  // m = opU(m, vec2(sin(p.x * 0.02 + time) + cos(p.y * 0.002 + time), 1));
 
   float s = .4 + sin(time) * length(p) * .2;
   s = .43;
@@ -128,6 +126,8 @@ void main() {
 
     col = doLighting(pos, nor, rayDirection, t.x, mal);
     col *= t.x;
+
+    col.r += t.x;
   }
   else {
     col = vec3(0, .5, .3) * .8;
