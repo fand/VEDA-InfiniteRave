@@ -15,6 +15,7 @@ uniform float time;
 uniform float volume;
 uniform sampler2D midi;
 uniform sampler2D mem;
+uniform sampler2D backbuffer;
 
 vec2 doModel(vec3 p);
 #pragma glslify: raytrace = require('glsl-raytrace', map = doModel, steps = 100)
@@ -115,6 +116,32 @@ vec3 doLighting(vec3 pos, vec3 nor, vec3 rd, float dis, vec3 mal) {
   return mal*lin;
 }
 
+vec3 bloom(in float level) {
+  float d = level * .01;
+  vec3 b = vec3(0.);
+
+  vec2 uv = gl_FragCoord.xy / resolution;
+  vec2 uvr = uv;
+  vec2 uvg = uv;
+  vec2 uvb = uv;
+
+
+  for (int i = 0; i < 30; i++) {
+    uvg = (uvg - .5) * (1. - d) + .5;
+    uvg = (uvg - .5) * (1. - d * 2.) + .5;
+    uvr = (uvb - .5) * (1. - d * 3.) + .5;
+
+    b += vec3(
+      texture2D(backbuffer, uvr).r,
+      texture2D(backbuffer, uvg).g,
+      texture2D(backbuffer, uvb).b
+    );
+  }
+
+  return b * level * .05;
+}
+
+
 void main() {
   float cameraAngle  = 0.5 * t();
   vec3 rayOrigin = vec3(3.5 * sin(cameraAngle), 3.0, 3.5 * cos(cameraAngle));
@@ -148,7 +175,7 @@ void main() {
     col.r += t.x;
   }
   else {
-    col = vec3(0, .5, .3) * .8;
+    col = vec3(0, .5, .3) * .0;
   }
 
   // Color grading
@@ -161,6 +188,8 @@ void main() {
   // col = 1. - col * 2.;
 
   col *= cc(0.);
+
+  col += bloom(cc(22.));
 
   gl_FragColor = vec4( col, 1.0 );
 }
