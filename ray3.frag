@@ -2,7 +2,6 @@
   glslify: true,
   audio: true,
   midi: true,
-  osc: 3333,
   pixelRatio: 1,
   frameskip: 1,
   PASSES: [
@@ -15,7 +14,6 @@ uniform vec2  resolution;
 uniform float time;
 uniform float volume;
 uniform sampler2D midi;
-uniform sampler2D osc_cc;
 uniform sampler2D mem;
 uniform sampler2D backbuffer;
 
@@ -41,8 +39,7 @@ vec2 rot(vec2 st, float t){
 }
 
 float cc(in float c) {
-  //return texture2D(midi, vec2(176. / 256., c / 128.)).x * 2.;
-  return texture2D(osc_cc, vec2(c / 8.)).x;
+  return texture2D(midi, vec2(176. / 256., c / 128.)).x * 2.;
 }
 
 float t() {
@@ -59,7 +56,7 @@ vec2 doModel(vec3 p) {
   vec3 pp = p;
   pp.xy = rot(pp.xy, pp.z * .2 + t() * .2);
   pp.xz = rot(pp.xz, pp.y * .2 + t());
-  p = mix(p, pp, cc(2.));
+  p = mix(p, pp, cc(16.));
 
   p = mod(p, blockSize) - (blockSize / 2.);
   p /= (blockSize / 2.);
@@ -156,8 +153,8 @@ void main() {
 
   // screenPos *= screenPos;
   // screenPos = rot(screenPos, floor(length(screenPos) * 10. - time * 3.) + time * .6);
-  screenPos = mix(screenPos, rot(screenPos, floor((abs(screenPos.x) + abs(screenPos.y)) * 3.) + time * .6), cc(4.));
-  screenPos = mix(screenPos, screenPos / pow(length(screenPos), 2.), cc(3.)); // fisheye
+  // screenPos = rot(screenPos, floor((abs(screenPos.x) + abs(screenPos.y)) * 3.) + time * .6);
+  // screenPos = screenPos / pow(length(screenPos), 2.); // fisheye
 
   vec3 rayDirection = camera(rayOrigin, rayTarget, screenPos, .4);
 
@@ -192,7 +189,7 @@ void main() {
 
   col *= cc(0.);
 
-  col += bloom(cc(6.));
+  col += bloom(cc(22.));
 
   gl_FragColor = vec4( col, 1.0 );
 }
