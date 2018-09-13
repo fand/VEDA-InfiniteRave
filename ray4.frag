@@ -8,7 +8,7 @@
     { fs: "mem.frag", TARGET: "mem", FLOAT: true },
     {},
   ],
-  server:3000,
+  // server:3000,
 }*/
 precision mediump float;
 uniform vec2  resolution;
@@ -47,47 +47,33 @@ float t() {
   return texture2D(mem, vec2(0)).y;
 }
 
+float DE2(vec3 z) {
+  z.xy = mix(z.xy, rot(z.xy, z.z + time * .3), cc(17.));
+  z.xz = mix(z.xz, rot(z.xz, z.y +time * .8), cc(17.));
+
+  float r;
+  int n = 0;
+  float Scale = 2.0;
+  float Offset = 2.0;
+
+  for (int i = 0; i < 10; i++) {
+    if(z.x + z.y<0.) z.xy = -z.yx; // fold 1
+    if(z.x + z.z<0.) z.xz = -z.zx; // fold 2
+    if(z.y + z.z<0.) z.zy = -z.yz; // fold 3
+    z = z*Scale - Offset*(Scale-1.0);
+    n++;
+  }
+
+  return (length(z) ) * pow(Scale, -float(n));
+}
+
 vec2 doModel(vec3 p) {
   vec2 m = vec2(99999);
-  vec3 p1 = p;
-  m = opU(m, vec2(sdBox(p1, vec3(1,1,1)*(1. + volume * .01)), 0.));
+  // m = opU(m, vec2(sdBox(p1, vec3(1,1,1)*(1. + volume * .01)), 0.));
 
-  float blockSize = 3.;// + sin(time);
-
-  vec3 pp = p;
-  pp.xy = rot(pp.xy, pp.z * .2 + t() * .2);
-  pp.xz = rot(pp.xz, pp.y * .2 + t());
-  p = mix(p, pp, cc(16.));
-
-  p = mod(p, blockSize) - (blockSize / 2.);
-  p /= (blockSize / 2.);
-
-  // m = opU(m, vec2(sdBox(p, vec3(.1, 10., .1)), 0));
-
-  float s = .4 + sin(time) * length(p) * .2;
-  s = .43;
-  // p *= 1. + sin(time) * .2;
-  float k = 1. - (
-    s / length(p) +
-    s / length(p + vec3(1, 1, 1)) +
-    s / length(p + vec3(1, 1, -1)) +
-    s / length(p + vec3(1, -1, 1)) +
-    s / length(p + vec3(1, -1, -1)) +
-    s / length(p + vec3(-1, 1, 1)) +
-    s / length(p + vec3(-1, 1, -1)) +
-    s / length(p + vec3(-1, -1, 1)) +
-    s / length(p + vec3(-1, -1, -1))
-  ) * .3;
-
-  m = opU(m, vec2(k, 1));
-
-  // holes
-  p = mod(p, .4) - .2;
-  p *= 1. + sin(time) * .2;
-  p.xy = rot(p.xy, time);
-
-  float h = .15;
-  // m.x = opS(sdBox(p, vec3(h, 1., h)), m.x);
+  p = mod(p, 4.) -2.;
+  // p *= 1.;
+  m.x = DE2(p);
 
   return m;
 }
@@ -126,7 +112,6 @@ vec3 bloom(in float level) {
   vec2 uvg = uv;
   vec2 uvb = uv;
 
-
   for (int i = 0; i < 30; i++) {
     uvg = (uvg - .5) * (1. - d) + .5;
     uvg = (uvg - .5) * (1. - d * 2.) + .5;
@@ -159,8 +144,8 @@ void main() {
 
   vec3 rayDirection = camera(rayOrigin, rayTarget, screenPos, .4);
 
-  // rayDirection.xy = rot(rayDirection.xy, time * .1);
-  // rayDirection.xz = rot(rayDirection.xz, time * .2);
+  rayDirection.xy = rot(rayDirection.xy, time * .1);
+  rayDirection.xz = rot(rayDirection.xz, time * .2);
 
   vec3 col = vec3(0.015);
   vec3 t = raytrace(rayOrigin, rayDirection, 13., 0.003, .6);
@@ -182,7 +167,7 @@ void main() {
   // Color grading
   col = pow(clamp(col,0.0,1.0), vec3(0.4));
 
-  col *= (1. - 1. / t.z);
+  col *= (1. - 10. / t.z);
 
   // col = fract(col * 3. + time + t.x);
   // col = col * 2. - 1.;
