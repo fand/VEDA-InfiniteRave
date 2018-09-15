@@ -2,7 +2,6 @@
     pixelRatio: 1,
     frameskip: 1,
     audio: true,
-    server: 3000,
     IMPORTED: {
         v1: { PATH: './videos/02.mov', SPEED: 1 },
     },
@@ -193,8 +192,8 @@ void main() {
     uv = uv * .5 + .5;
     gl_FragColor = texture2D(v1, uv);
 
-    gl_FragColor = p1(uv, gl_FragColor);
-    gl_FragColor = p2(uv0, gl_FragColor);
+    // gl_FragColor = p1(uv, gl_FragColor);
+    // gl_FragColor = p2(uv0, gl_FragColor);
 
     // gl_FragColor = p3(uv0, gl_FragColor);
     // gl_FragColor = p4(uv0, gl_FragColor);

@@ -2,6 +2,7 @@
   glslify: true,
   audio: true,
   frameskip: 1,
+  pixelRatio: 1,
 }*/
 precision mediump float;
 uniform vec2  resolution;

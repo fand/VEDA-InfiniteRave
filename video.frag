@@ -3,7 +3,7 @@
     frameskip: 1,
     audio: true,
     IMPORTED: {
-        v1: { PATH: './videos/08.mov', SPEED: 2 },
+        v1: { PATH: './videos/08.mov', SPEED: 1 },
     },
 }*/
 precision highp float;
@@ -238,15 +238,15 @@ void main() {
     // gl_FragColor = p3(uv0, gl_FragColor);
     // gl_FragColor = p4(uv0, gl_FragColor);
     // gl_FragColor = p5(uv0, gl_FragColor);
-    gl_FragColor = p6(uv0, gl_FragColor);
+    // gl_FragColor = p6(uv0, gl_FragColor);
 
-    // gl_FragColor = edge(uv, gl_FragColor);
+    gl_FragColor += edge(uv, gl_FragColor);
 
     // gl_FragColor = texture2D(v1, uv0);
     // gl_FragColor.r = texture2D(v1, uv).r;
 
 
-    // gl_FragColor.b = .3 - gl_FragColor.r;
+    gl_FragColor.b = .3 - gl_FragColor.r;
 
     // gl_FragColor *= 10. - 8.;
 

@@ -8,7 +8,7 @@
     { fs: "mem.frag", TARGET: "mem", FLOAT: true },
     {},
   ],
-  server:3000,
+  // server:3000,
 }*/
 precision mediump float;
 uniform vec2  resolution;
@@ -155,7 +155,7 @@ void main() {
   // screenPos *= screenPos;
   // screenPos = rot(screenPos, floor(length(screenPos) * 10. - time * 3.) + time * .6);
   // screenPos = rot(screenPos, floor((abs(screenPos.x) + abs(screenPos.y)) * 3.) + time * .6);
-  // screenPos = screenPos / pow(length(screenPos), 2.); // fisheye
+  screenPos = screenPos / pow(length(screenPos), sin(cc(18.) * 7.) * 3.); // fisheye
 
   vec3 rayDirection = camera(rayOrigin, rayTarget, screenPos, .4);
 
@@ -180,17 +180,20 @@ void main() {
   }
 
   // Color grading
-  col = pow(clamp(col,0.0,1.0), vec3(0.4));
+  col = pow(clamp(col,0.0,1.0), vec3(0.2));
 
-  col *= (1. - 1. / t.z);
+  // col *= (1. - 1. / t.z);
 
-  // col = fract(col * 3. + time + t.x);
-  // col = col * 2. - 1.;
-  // col = step(.5, col);
+  // col = fract(col * 3. t.x + t() / t.x);
+  // col.b = col.g * 2. - 1.;
+  // col.b = step(.5, col.b);
 
   // col = 1. - col * 2.;
+  col /= fract(t.x * time);
 
   col *= cc(0.);
+
+  col.b += texture2D(backbuffer, gl_FragCoord.xy/resolution).r * .2;
 
   col += bloom(cc(22.));
 
