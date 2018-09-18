@@ -6,6 +6,7 @@
   frameskip: 1,
   PASSES: [
     { fs: "mem.frag", TARGET: "mem", FLOAT: true },
+    // { vs: "./main.vert", TARGET: "vert" },
     {},
   ],
   IMPORTED: {
@@ -18,6 +19,7 @@ uniform float time;
 uniform float volume;
 uniform sampler2D midi;
 uniform sampler2D mem;
+uniform sampler2D vert;
 uniform sampler2D backbuffer;
 uniform sampler2D v1;
 
@@ -49,13 +51,12 @@ vec2 IFS(inout vec3 z, float Scale, float Offset) {
     z = fold(z, n2);
     z = fold(z, n3);
 
-    // z += .01;
-    // z = fold(z, n4);
-    // z = fold(z, n5);
-    // z = fold(z, n6);
+    z += .01;
+    z = fold(z, n4);
+    z = fold(z, n5);
+    z = fold(z, n6);
 
     z = z*Scale - Offset*(Scale-1.0);
-
 
     // z.xy = rot(z.xy, time);
 
@@ -80,8 +81,8 @@ vec2 DE2(vec3 z) {
 
   // return (sdBox(z, vec3(.7, .2, .8))) * pow(Scale, -float(n));
   return vec2(
-    // sdTorus(z, vec2(.8, .01)) * pow(Scale, -float(n)),
-    sdBox(z, vec3(3.)) * sn.x,
+    // sdTorus(z, vec2(2.8, 7.)),
+    sdBox(z, vec3(2.)) * sn.x,
     sn.y
   );
 }
@@ -101,12 +102,15 @@ vec2 doModel(vec3 p) {
   m = opU(m, sdCenter(p));
 
   // p.xy = rot(p.xy, p.z * cc(16.) + t());
-  // p.xz = rot(p.xy, p.z * cc(16.) + t());
-  // m = opU(m, sdBankohan(rep(p, 4.) * 10.));
+  // p.xz = rot(p.xz, p.y *10.* cc(16.) + t() * .2);
 
-  // p.xz *= rot(p.xz, p.y * .7);
+
+
+  // p.xy *= rot(p.xy, p.z * .2 + time);
+  // p.xy *= rot(p.xy, p.y * .2 + time);
+
   p = rep(p, 4.);
-
+  // p.xz *= rot(p.xz, p.y * 2.1);
   m = opU(m, DE2(p));
 
   return m;
@@ -142,7 +146,7 @@ vec3 doLighting(vec3 pos, vec3 nor, vec3 rd, float dis, vec3 material) {
 }
 
 void main() {
-  float cameraAngle  = 0.4 * t();
+  float cameraAngle  = 0.4 * time;
   vec3 rayOrigin = vec3(3.5 * sin(cameraAngle), 3.0, 3.5 * cos(cameraAngle));
   vec3 rayTarget = vec3(0, 0, 0);
   vec2 uv = square(resolution);
@@ -154,17 +158,28 @@ void main() {
   // uv = rot(uv, smoothstep(0., 1., length(uv) * 10. - time * 3.) + time * .6);
 
   // Rect
-  uv = mix(uv, rect(uv), cc(18.));
+  // uv = mix(uv, rect(uv), cc(18.));
   // uv = rect(uv);
+
+  // uv *= uv;
+  // uv = rot(uv, time*.02)-.4;
+  // uv *= uv;
+  // uv = rot(uv, time*.03)-.4;
+  // uv.y = abs(uv.y);
+
+
+
 
   // float k = (abs(uv.x) + abs(uv.y)) * 10.;
   // uv = rot(uv, smoothstep(.1, .9, fract(k)) + floor(k) + time * .6);
 
-  // uv = uv / pow(length(uv), .2); // fisheye
-  // uv = uv / pow(length(uv), -2.); // fisheye
+  // float tt = pow(sin(time * 3.) * .5 - .5, 3.);
+
+  // uv = uv / pow(length(uv), fract(time) / sin(atan(uv.y, uv.x) * PI)); // fisheye
+  // uv = uv / pow(length(uv), tt); // fisheye
+  // uv = uv / pow(length(uv), 2.); // fisheye
 
   vec3 rayDirection = camera(rayOrigin, rayTarget, uv, .4);
-
   // rayDirection.xy = rot(rayDirection.xy, t() * .1);
   // rayDirection.xz = rot(rayDirection.xz, t() * .2);
 
@@ -183,8 +198,8 @@ void main() {
 
     col = doLighting(pos, nor, rayDirection, t.x, mal);
     col.b += 10. / t.z;
-    // col *= 1. + 1. / abs(t.y);
-    // col = fract(col + t.x* .3);
+    col *= 1. + 1. / abs(t.y);
+    col = fract(col + t.x* .003);
   }
   else {
     col = vec3(0, .5, .3) * .0;
@@ -203,7 +218,15 @@ void main() {
     col += texture2D(v1, abs(uv*.2)).rgb;
   }
 
-  col += bloom(cc(22.));
+  // Vertex Shader
+  // vec2 uv2 = uv0 -.5;
+  // uv2 = rot(uv2, time + length(uv2));
+  // uv2 *= uv2;
+  // uv2 += .5;
+  col += texture2D(vert, uv0).rgb * cc(1.);
+
+  // col = col * 2. - 1.;
+  // col += bloom(cc(22.));
   // col += bloom(.2);
 
   if (mod(time *fract(time), .73) < .01 || c(7., 2.)) {
