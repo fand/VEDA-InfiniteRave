@@ -9,5 +9,8 @@
     "glsl-smooth-min": "^1.0.0",
     "glsl-square-frame": "^1.0.1",
     "glslify": "^6.3.1"
+  },
+  "devDependencies": {
+    "glslify-import": "^3.1.0"
   }
 }

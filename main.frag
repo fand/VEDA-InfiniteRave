@@ -2,7 +2,7 @@
   glslify: true,
   audio: true,
   midi: true,
-  pixelRatio: 1.5,
+  pixelRatio: 1,
   frameskip: 1,
   PASSES: [
     { fs: "mem.frag", TARGET: "mem", FLOAT: true },
@@ -52,13 +52,13 @@ vec2 IFS(inout vec3 z, float Scale, float Offset) {
     z = fold(z, n3);
 
     z += .01;
-    z = fold(z, n4);
-    z = fold(z, n5);
-    z = fold(z, n6);
+    // z = fold(z, n4);
+    // z = fold(z, n5);
+    // z = fold(z, n6);
 
     z = z*Scale - Offset*(Scale-1.0);
 
-    // z.xy = rot(z.xy, time);
+    z.xy = rot(z.xy, time);
 
     // z.xy = rot(z.xy, z.z * z.y * .7 - time * .4);
     // z.xz = rot(z.xz, z.y * z.x * .9 + time * .3);
@@ -66,7 +66,7 @@ vec2 IFS(inout vec3 z, float Scale, float Offset) {
     n++;
   }
 
-  return vec2(pow(Scale, -n) , n);
+  return vec2(pow(Scale, -n) , n + 1.);
 }
 
 vec2 DE2(vec3 z) {
@@ -81,15 +81,16 @@ vec2 DE2(vec3 z) {
 
   // return (sdBox(z, vec3(.7, .2, .8))) * pow(Scale, -float(n));
   return vec2(
-    // sdTorus(z, vec2(2.8, 7.)),
-    sdBox(z, vec3(2.)) * sn.x,
+    // sdTorus(z, vec2(10.3, .8)) * sn.x,
+    sdBox(z, vec3(2.8)) * sn.x,
     sn.y
   );
 }
 
 vec2 sdCenter(in vec3 p) {
   // p *= 1. - v();
-  float d = sdBox(p, vec3(1));
+  // float d = sdBox(p, vec3(2));
+  float d = sdSphere(p, 2.);
   // p+=noise2(p.xy+time);
   // p+=noise2(p.xz+time);
 
@@ -101,10 +102,11 @@ vec2 doModel(vec3 p) {
 
   m = opU(m, sdCenter(p));
 
-  // p.xy = rot(p.xy, p.z * cc(16.) + t());
-  // p.xz = rot(p.xz, p.y *10.* cc(16.) + t() * .2);
+  p.xy = rot(p.xy, p.z + time);
+  // p.xz = rot(p.xz, p.z + time);
 
-
+  p.xz *= 1. + abs(p.y) * abs(p.y) * .02;
+  p.xz = rot(p.xz, p.y *10.* cc(16.) + t() * .2);
 
   // p.xy *= rot(p.xy, p.z * .2 + time);
   // p.xy *= rot(p.xy, p.y * .2 + time);
@@ -118,7 +120,8 @@ vec2 doModel(vec3 p) {
 
 vec3 doMaterial(vec3 pos, vec3 nor, float materialId) {
   if (materialId == 0.0) {
-    return vec3(1, 0., .3);
+//    return vec3(1, 0., .3);
+    return vec3(10, 0, 0);
   }
   if (materialId == 1.0) {
     return vec3(1, .4, .2);
@@ -142,11 +145,12 @@ vec3 doLighting(vec3 pos, vec3 nor, vec3 rd, float dis, vec3 material) {
 
   float diffuse = max(dot(nor,lightDir),0.0);
   lin += diffuse * vec3(2);
+
   return material * lin;
 }
 
 void main() {
-  float cameraAngle  = 0.4 * time;
+  float cameraAngle  = 0.2 * time;
   vec3 rayOrigin = vec3(3.5 * sin(cameraAngle), 3.0, 3.5 * cos(cameraAngle));
   vec3 rayTarget = vec3(0, 0, 0);
   vec2 uv = square(resolution);
@@ -167,9 +171,6 @@ void main() {
   // uv = rot(uv, time*.03)-.4;
   // uv.y = abs(uv.y);
 
-
-
-
   // float k = (abs(uv.x) + abs(uv.y)) * 10.;
   // uv = rot(uv, smoothstep(.1, .9, fract(k)) + floor(k) + time * .6);
 
@@ -180,8 +181,8 @@ void main() {
   // uv = uv / pow(length(uv), 2.); // fisheye
 
   vec3 rayDirection = camera(rayOrigin, rayTarget, uv, .4);
-  // rayDirection.xy = rot(rayDirection.xy, t() * .1);
-  // rayDirection.xz = rot(rayDirection.xz, t() * .2);
+  rayDirection.xy = rot(rayDirection.xy, t() * .2);
+  rayDirection.yz = rot(rayDirection.yz, t() * .4);
 
   if (c(.53, .2)) {
     rayDirection.xy = rot(rayDirection.xy, time * 3.1);
@@ -197,9 +198,12 @@ void main() {
     vec3 mal = doMaterial(pos, nor, t.y);
 
     col = doLighting(pos, nor, rayDirection, t.x, mal);
+    if (t.y == 0.) {
+      col = mal;
+    }
     col.b += 10. / t.z;
     col *= 1. + 1. / abs(t.y);
-    col = fract(col + t.x* .003);
+    // col = fract(col + t.z* .03);
   }
   else {
     col = vec3(0, .5, .3) * .0;
@@ -208,10 +212,10 @@ void main() {
   // Color grading
   col = pow(clamp(col,0.0,1.0), vec3(0.6));
 
-  col /= (1. - 3. / t.z);
+  col /= (1. - .3 / t.z/t.z);
 
   col = max(vec3(0), col);
-  col *= cc(0.);
+  // col *= cc(0.);
 
 
   if (c(.47, .08)) {
@@ -229,16 +233,18 @@ void main() {
   // col += bloom(cc(22.));
   // col += bloom(.2);
 
-  if (mod(time *fract(time), .73) < .01 || c(7., 2.)) {
-    float r = random(vec2(uv0.y * .01, time)) * v() * .002;
-    col.gb += texture2D(backbuffer, fract(uv0 - vec2(1,0) * r)).br;
-  }
-  if (c(4.3, 1.)) {
-    col += bloom(.2);
-  }
+  // if (mod(time *fract(time), .73) < .01 || c(7., 2.)) {
+  //   float r = random(vec2(uv0.y * .01, time)) * v() * .002;
+  //   col.gb += texture2D(backbuffer, fract(uv0 - vec2(1,0) * r)).br;
+  // }
+  // if (c(4.3, 1.)) {
+//    col += bloom(.3);
+  // }
 
   vec3 hsv = rgb2hsv(col);
-  hsv.x += cc(19.);
+  // hsv.x += cc(19.);
+  hsv.x += .3;
+  // hsv.x += fract(t.z + time * .2);
   col = hsv2rgb(hsv);
 
   // col += texture2D(backbuffer, gl_FragCoord.xy / resolution).rgb * .3;
