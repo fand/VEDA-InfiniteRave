@@ -2,16 +2,13 @@
   glslify: true,
   audio: true,
   midi: true,
-  pixelRatio: 1,
+  pixelRatio: 2,
   frameskip: 1,
   PASSES: [
     { fs: "mem.frag", TARGET: "mem", FLOAT: true },
-    // { vs: "./main.vert", TARGET: "vert" },
+    { vs: "./main.vert", TARGET: "vert" },
     {},
   ],
-  IMPORTED: {
-      v1: { PATH: './videos/08.mov', SPEED: 1 },
-  },
 }*/
 precision mediump float;
 uniform vec2  resolution;
@@ -21,7 +18,6 @@ uniform sampler2D midi;
 uniform sampler2D mem;
 uniform sampler2D vert;
 uniform sampler2D backbuffer;
-uniform sampler2D v1;
 
 vec2 doModel(vec3 p);
 #pragma glslify: raytrace = require('./utils/raytrace', map = doModel, steps = 100)
@@ -52,15 +48,15 @@ vec2 IFS(inout vec3 z, float Scale, float Offset) {
     z = fold(z, n3);
 
     z += .01;
-    // z = fold(z, n4);
-    // z = fold(z, n5);
-    // z = fold(z, n6);
+    z = fold(z, n4);
+    z = fold(z, n5);
+    z = fold(z, n6);
 
     z = z*Scale - Offset*(Scale-1.0);
 
     z.xy = rot(z.xy, time);
 
-    // z.xy = rot(z.xy, z.z * z.y * .7 - time * .4);
+    z.xy = rot(z.xy, z.z * z.y * .7 - time * .4);
     // z.xz = rot(z.xz, z.y * z.x * .9 + time * .3);
 
     n++;
@@ -77,7 +73,7 @@ vec2 DE2(vec3 z) {
 
   // return vec2(sdBox(z, vec3(.1)), 8.);
 
-  vec2 sn = IFS(z, 4., 1.);
+  vec2 sn = IFS(z, 5., 1.);
 
   // return (sdBox(z, vec3(.7, .2, .8))) * pow(Scale, -float(n));
   return vec2(
@@ -120,7 +116,6 @@ vec2 doModel(vec3 p) {
 
 vec3 doMaterial(vec3 pos, vec3 nor, float materialId) {
   if (materialId == 0.0) {
-//    return vec3(1, 0., .3);
     return vec3(10, 0, 0);
   }
   if (materialId == 1.0) {
@@ -156,34 +151,26 @@ void main() {
   vec2 uv = square(resolution);
   vec2 uv0 = gl_FragCoord.xy / resolution;
 
-  // float r = fract(sin(dot(vec2(time), vec2(9382.,498.))) * 392.);
-  // float v = floor(mod(volume * 5., 10.));
-
-  // uv = rot(uv, smoothstep(0., 1., length(uv) * 10. - time * 3.) + time * .6);
-
-  // Rect
-  // uv = mix(uv, rect(uv), cc(18.));
+  // Rect distortion
+  uv = mix(uv, rect(uv), cc(18.));
   // uv = rect(uv);
 
+  // Folding
   // uv *= uv;
-  // uv = rot(uv, time*.02)-.4;
+  uv = rot(uv, time*.02)-.4;
+  // uv.y = abs(uv.y);
   // uv *= uv;
-  // uv = rot(uv, time*.03)-.4;
+  uv = rot(uv, time*.03)-.4;
   // uv.y = abs(uv.y);
 
-  // float k = (abs(uv.x) + abs(uv.y)) * 10.;
-  // uv = rot(uv, smoothstep(.1, .9, fract(k)) + floor(k) + time * .6);
+  // Fisheye-like distortion
+  // uv = uv / pow(length(uv), fract(time) / sin(atan(uv.y, uv.x) * PI));
+  // uv = uv / pow(length(uv), 2.);
 
-  // float tt = pow(sin(time * 3.) * .5 - .5, 3.);
-
-  // uv = uv / pow(length(uv), fract(time) / sin(atan(uv.y, uv.x) * PI)); // fisheye
-  // uv = uv / pow(length(uv), tt); // fisheye
-  // uv = uv / pow(length(uv), 2.); // fisheye
-
+  // Camera rotation
   vec3 rayDirection = camera(rayOrigin, rayTarget, uv, .4);
   rayDirection.xy = rot(rayDirection.xy, t() * .2);
   rayDirection.yz = rot(rayDirection.yz, t() * .4);
-
   if (c(.53, .2)) {
     rayDirection.xy = rot(rayDirection.xy, time * 3.1);
     rayDirection.xz = rot(rayDirection.xz, time * 2.2);
@@ -201,6 +188,7 @@ void main() {
     if (t.y == 0.) {
       col = mal;
     }
+
     col.b += 10. / t.z;
     col *= 1. + 1. / abs(t.y);
     // col = fract(col + t.z* .03);
@@ -211,16 +199,10 @@ void main() {
 
   // Color grading
   col = pow(clamp(col,0.0,1.0), vec3(0.6));
-
   col /= (1. - .3 / t.z/t.z);
 
   col = max(vec3(0), col);
   // col *= cc(0.);
-
-
-  if (c(.47, .08)) {
-    col += texture2D(v1, abs(uv*.2)).rgb;
-  }
 
   // Vertex Shader
   // vec2 uv2 = uv0 -.5;
@@ -230,21 +212,22 @@ void main() {
   col += texture2D(vert, uv0).rgb * cc(1.);
 
   // col = col * 2. - 1.;
-  // col += bloom(cc(22.));
+  col += bloom(cc(22.));
+
+  // Random effects
+  if (mod(time *fract(time), .73) < .01 || c(7., 2.)) {
+    float r = random(vec2(uv0.y * .01, time)) * v() * .002;
+    col.gb += texture2D(backbuffer, fract(uv0 - vec2(1,0) * r)).br;
+  }
+  if (c(4.3, 1.)) {
+    col += bloom(.3);
+  }
   // col += bloom(.2);
 
-  // if (mod(time *fract(time), .73) < .01 || c(7., 2.)) {
-  //   float r = random(vec2(uv0.y * .01, time)) * v() * .002;
-  //   col.gb += texture2D(backbuffer, fract(uv0 - vec2(1,0) * r)).br;
-  // }
-  // if (c(4.3, 1.)) {
-//    col += bloom(.3);
-  // }
-
   vec3 hsv = rgb2hsv(col);
-  // hsv.x += cc(19.);
-  hsv.x += .3;
+  hsv.x += cc(19.);
   // hsv.x += fract(t.z + time * .2);
+  hsv.x += .3;
   col = hsv2rgb(hsv);
 
   // col += texture2D(backbuffer, gl_FragCoord.xy / resolution).rgb * .3;

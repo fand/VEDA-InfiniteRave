@@ -20,7 +20,7 @@ void main() {
   i+=t;
 
   vec3 pos = vec3(
-    sin(i * 2),// * sin(t * .2 + i),
+    sin(i * 2.),// * sin(t * .2 + i),
     cos(i * 7.3),// * cos(t * .49 + i),
     cos(t) * sin(t + vertexId)
   ) *.5;
